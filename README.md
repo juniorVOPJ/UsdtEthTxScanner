@@ -20,8 +20,8 @@ Um sistema de monitoramento em tempo real de transações USDT na rede Ethereum 
 
 1. Clone o repositório:
     ```bash
-    git clone https://github.com/seu-usuario/monitor-usdt-ethereum.git
-    cd monitor-usdt-ethereum
+    git clone https://github.com/juniorVOPJ/UsdtEthTxScanner.git
+    cd UsdtEthTxScanner
     ```
 
 2. Crie um ambiente virtual e ative-o:
