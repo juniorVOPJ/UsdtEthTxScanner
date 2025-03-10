@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monitor de Transações USDT</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            table-layout: fixed;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        th:nth-child(1), td:nth-child(1) { width: 20%; }
+        th:nth-child(2), td:nth-child(2) { width: 60%; }
+        th:nth-child(3), td:nth-child(3) { width: 20%; }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        a {
+            color: #2196F3;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .header {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status {
+            font-size: 14px;
+            color: #666;
+            background-color: #f8f8f8;
+            padding: 8px 15px;
+            border-radius: 4px;
+        }
+        #lastUpdate {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .valor {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .totals {
+            background-color: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .total-item {
+            text-align: center;
+            flex: 1;
+            padding: 0 20px;
+        }
+        .total-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .total-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+            font-family: 'Courier New', monospace;
+        }
+        .total-item:not(:last-child) {
+            border-right: 1px solid #ddd;
+        }
+    </style>
+    <script>
+        let totalValue = 0;
+        let totalTransactions = 0;
+        let averageValue = 0;
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(num);
+        }
+
+        function updateTotals(transactions) {
+            totalValue = 0;
+            totalTransactions = transactions.length;
+            
+            transactions.forEach(tx => {
+                // Remove vírgulas e converte para número
+                const value = parseFloat(tx[2].replace(/,/g, ''));
+                totalValue += value;
+            });
+            
+            averageValue = totalTransactions > 0 ? totalValue / totalTransactions : 0;
+
+            document.getElementById('totalValue').textContent = formatNumber(totalValue);
+            document.getElementById('totalTransactions').textContent = totalTransactions;
+            document.getElementById('averageValue').textContent = formatNumber(averageValue);
+        }
+
+        function updateTable() {
+            fetch('/get_transactions')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('tbody');
+                    tbody.innerHTML = '';
+                    
+                    data.forEach(tx => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${tx[0]}</td>
+                            <td><a href="https://etherscan.io/tx/${tx[1]}" target="_blank">${tx[1]}</a></td>
+                            <td class="valor">${tx[2]}</td>
+                        `;
+                        tbody.insertBefore(row, tbody.firstChild);
+                    });
+                    
+                    document.getElementById('lastUpdate').textContent = 
+                        new Date().toLocaleTimeString('pt-BR', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                        });
+
+                    updateTotals(data);
+                })
+                .catch(error => console.error('Erro:', error));
+        }
+
+        // Atualiza a cada 5 segundos
+        setInterval(updateTable, 5000);
+        
+        // Primeira atualização
+        document.addEventListener('DOMContentLoaded', updateTable);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Monitor de Transações USDT</h1>
+            <div class="status">
+                Última atualização: <span id="lastUpdate">--:--:--</span>
+            </div>
+        </div>
+
+        <div class="totals">
+            <div class="total-item">
+                <div class="total-label">Total USDT</div>
+                <div class="total-value">$<span id="totalValue">0.00</span></div>
+            </div>
+            <div class="total-item">
+                <div class="total-label">Total Transações</div>
+                <div class="total-value"><span id="totalTransactions">0</span></div>
+            </div>
+            <div class="total-item">
+                <div class="total-label">Média por Transação</div>
+                <div class="total-value">$<span id="averageValue">0.00</span></div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Hash da Transação</th>
+                    <th>Valor (USDT)</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
